@@ -24,6 +24,7 @@ class table():
         
         # Declare players, set their hands
         self.players = []
+
         newHands = []
         for ind in range(28):
             newHands.append(ind)
@@ -31,25 +32,43 @@ class table():
         
         ind = 0
         isAutoList = [False,True,True,True]
-        for playInd in range(4):
-            pHand = newHands[ind:ind+7]
+        for plyrInd in range(4):
+            pHand = newHands[ind:ind+6]
             pHand.sort()
-            p = player(plNumb=playInd, isAuto=isAutoList[playInd],hand=pHand)
+            p = player(plNumb=plyrInd, isAuto=isAutoList[plyrInd],hand=pHand)
             self.players.append(p)
-            ind += 7
+            ind += 6
         print(newHands)
         print("\nPieces dealt.")
         
         # If there is no one to start, find who has the [6,6] (piece #27)
+        # If no one has this piece, then look for the [5,5], and so on, up to
+        # the last possible double piece, [2,2]
+
         if starts == -1:
+            startList = [27,25,22,18,13]
+            thisDblIndx = 0
             keepLook = True
-            playInd = -1
-            while keepLook and playInd < 4:
-                playInd += 1 
-                pHand = self.players[playInd].hand
-                if 27 in pHand:
-                    keepLook = False
-            self.starts = playInd
+            while keepLook:# and thisDblIndx < 5:
+#                print("\nSearching for",thisDblIndx,": piece",startList[thisDblIndx])
+                plyrInd = 0
+                while keepLook and plyrInd < 4:
+#                    print("Searching in player "+str(plyrInd)+"'s hands.")
+                    pHand = self.players[plyrInd].hand
+#                    print(pHand)
+                    if startList[thisDblIndx] in pHand:
+                        keepLook = False
+#                        print("Found it!")
+                    else:
+                        plyrInd += 1
+                    #
+                #
+                if keepLook:
+                    thisDblIndx += 1
+                #
+            #
+            self.starts = plyrInd
+            self.strtWith = startList[thisDblIndx]
             print("\nPlayer #" + str(self.starts) + " will begin.\n")
         #
         
@@ -63,8 +82,11 @@ class table():
         pl = self.players[self.plays]
         if not pl.isAuto:
             self.showTabl()
-        
-        move = pl.play(self.currPiec, self.piecHist, play27=isFirst)
+        if isFirst:
+            move = pl.play(self.currPiec, self.piecHist, \
+                           strtWith=self.strtWith)
+        else:
+            move = pl.play(self.currPiec, self.piecHist)
         piec, posi, ornt = move
         self.piecHist.append(piec)
 
@@ -142,21 +164,24 @@ class table():
         #
         
     def specFnshTest(self,move):
-        print('-'*80)
+        print('\n' + '-'*80)
         print('Game finished!\n')
         dom = domino()
 
         piec, _, _ = move
         piecPair = dom.getPiecPair(piec)
-        
+
+        print("Final piece:",piecPair)
         # Test for final double piece
         if piecPair[0] == piecPair[1]:
             isCarr = True
         else: 
             isCarr = False
             
+        print("Table state before last piece:",dom.getPiecPair(self.currPiec))
         # Test for finish at both ends
-        compScor = dom.isComp(self.currPiec,piec)
+        compScor = dom.isComp(piec,self.currPiec)
+        print(compScor)
         # 1 & 2, or 4 & 8
         isOne, isTwo, isFour, isEig = False, False, False, False
         if compScor % 2 == 1:
@@ -171,11 +196,15 @@ class table():
         if compScor > 0:
             isEig = True
             
-        if (isOne and isTwo) or (isFour and isEig):
+        print("isOne:",isOne)
+        print("isTwo:",isTwo)        
+        print("isFour:",isFour)
+        print("isEig:",isEig)
+        
+        if (isTwo and isFour) or (isEig and isOne):
             bothSide = True
         else:
             bothSide = False
-        
 
         # Final count for points        
         if isCarr:

@@ -115,7 +115,11 @@ class player():
                 handStr += str(dom.getPiecPair(hand[ind]))
                 handStr += ', '
             print(handStr)
-            print("\nChoose the piece to be played:")
+            if len(psbl) == 1:
+                print("\nThere is only one possibility:")
+            else:
+                print("\nChoose the piece to be played:")
+
             for ind in range(len(psbl)):
                 piec,posi,ornt = psbl[ind]
                 strPrnt = ' - ' + str(ind) + ' : '
@@ -130,27 +134,37 @@ class player():
                 strPrnt += ')'
                 
                 print(strPrnt)
-                                        
-            strChoice = input("  >> ")
-            try:
-                choice = int(strChoice)
-                isInt = True
-            except ValueError:
-                isInt = False
-            
-            if isInt and choice > -1 and choice < len(psbl):
+
+            if len(psbl) == 1:
+                print("Press any key to play it.")            
+                input("  >> ")
+                choice = 0
                 keepAsk = False
             else:
-                print("Error while parsing input.")
-                print("Please try again.")
+                strChoice = input("  >> ")
+                try:
+                    choice = int(strChoice)
+                    isInt = True
+                except ValueError:
+                    isInt = False
+                
+                if isInt and choice > -1 and choice < len(psbl):
+                    keepAsk = False
+                else:
+                    print("Error while parsing input.")
+                    print("Please try again.")
+            #
         #
         return choice
         
     def getPsbl(self,currPiec):
+        """Get the possibilities for playing."""
         dom = domino()
         psbl = []
                 
         for ind in self.hand:
+            # all the possibilities for this particular piece are encoded in 
+            # psblIndx
             psblIndx = dom.isComp(ind,currPiec)
             piecPair = dom.getPiecPair(ind)
             if psblIndx > 0:
@@ -173,7 +187,7 @@ class player():
         return psbl
         
         
-    def play(self,currPiec,piecHist,play27=False):
+    def play(self,currPiec,piecHist,strtWith=None):
         """This method chooses the piece to be played (if such piece exists), 
         its orientation and placement, and then removes the piece from the 
         player's hand (again, if it is the case). 
@@ -191,17 +205,16 @@ class player():
         dom = domino()
         
         # This first part is concerned with choosing a piece to be played
-        playPiec = None
+        playPiec = strtWith
         
         posi = None
         ornt = None
         
         # This is to start a match with the [6,6]. No choice here.
-        if play27:
-            playPiec = 27
-        # For any other case...
-        else:
-            # This is for the beginning case (any piece is ok)
+        if strtWith is None:
+
+            # This is for the beginning case, without a specific piece to begin
+            # with. (That is, any piece is ok)
             if currPiec is None:
                 psbl = self.hand
                 # Orientation and position do not apply
