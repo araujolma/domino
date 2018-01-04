@@ -63,7 +63,7 @@ class table():
         dom = domino()
                 
         pl = self.players[self.plays]
-        piec = pl.play(self.currPiec,self.piecHist,play27=isFirst)
+        piec,posi,ornt = pl.play(self.currPiec,self.piecHist,play27=isFirst)
         
         self.piecHist.append(piec)
 
@@ -72,17 +72,26 @@ class table():
                 self.currPiec = piec
             else:
                 # update current piece
+                
                 piecPair = dom.getPiecPair(piec)
                 currPiecPair = dom.getPiecPair(self.currPiec)
-                if piecPair[0] == currPiecPair[0]:
-                    currPiecPair[0] = piecPair[1]
-                elif piecPair[0] == currPiecPair[1]:
-                    currPiecPair[1] = piecPair[1]
-                elif piecPair[1] == currPiecPair[0]:
-                    currPiecPair[0] = piecPair[0]
-                else: 
-                    currPiecPair[1] = piecPair[0]
-            
+                
+                if ornt:
+                    # True orientation: 
+                    # greater side exposed, lesser side replaced
+                    ppIndx = 1
+                else:
+                    # False orientation: 
+                    # lesser side exposed, greater side replaced
+                    ppIndx = 0
+                    
+                if posi == 0:
+                    # left position. Replace lesser side
+                    currPiecPair[0] = piecPair[ppIndx]
+                else:
+                    # right position. Replace greater side
+                    currPiecPair[1] = piecPair[ppIndx]
+
                 self.currPiec = dom.getPiecNum(currPiecPair)
         
         # Find out if player has won
@@ -124,7 +133,11 @@ class table():
         
         print('-'*80)
         print("\nThis is the current table:")
-        print(self.piecHist)
+        for ind in self.piecHist:
+            if ind is None:
+                print(str(ind))
+            else:
+                print(str(ind) + ": " + str(dom.getPiecPair(ind)))
 
         cp = self.currPiec
         if cp is not None:

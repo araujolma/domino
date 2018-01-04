@@ -5,52 +5,54 @@ Created on Tue Jan  2 15:34:56 2018
 
 @author: levi
 """
-
-#class domino():
-#    """Class domino holds the basics for the game: piece list, compatibility
-#    test, etc."""
-#    # Define list of pieces    
-#    piecList = []
-#    for i1 in range(7):
-#        for i2 in range(i1,7):
-#            piecList.append([i1,i2])
-#    
-#    def isComp(self,p1,p2):
-#        
-#        if self.piecList[p1][0] == self.piecList[p2][0] or \
-#            self.piecList[p1][0] == self.piecList[p2][1] or \
-#            self.piecList[p1][1] == self.piecList[p2][0] or \
-#            self.piecList[p1][1] == self.piecList[p2][1]:
-#            return True
-#        else: 
-#            return False
-#
-#    def getPiec(self,piecPair):
-#        piecPair.sort()
-#        num = 0
-#        
-#        for ind in range(6):
-#            if piecPair[0] > ind:
-#                num += 6-ind
-#        num += piecPair[1]
-#        
-#        return num
+import random
 
 class domino():
     """Class domino holds the basics for the game: piece list, compatibility
     test, etc."""
     
-    def isComp(self,p1,p2):
+    def isComp(self,handP,tablP):
+        """Finds out if piece is compatible with the table's current state.
         
-        pp1 = self.getPiecPair(p1)
-        pp2 = self.getPiecPair(p2)
-        if pp1[0] == pp2[0] or pp1[0] == pp2[1] or \
-            pp1[1] == pp2[0] or pp1[1] == pp2[1]:
-            return True
-        else: 
-            return False
+        It returns an integer with the sum of the possibilities for the given 
+        piece:
+        
+        0 means no possibility,
+        1 means the piece is appliable on the left (lesser) side, 
+            with True orientation
+        2 means the piece is appliable on the right (greater) side, 
+            with True orientation
+        4 means the piece is appliable on the left (lesser) side, 
+            with False orientation
+        8 means the piece is appliable on the right (greater) side, 
+            with False orientation
+    
+        """
+        
+        handPP = self.getPiecPair(handP)
+        tablPP = self.getPiecPair(tablP)
+        
+        NPsbl = 0
+        
+        if handPP[0] == tablPP[0]:
+            NPsbl += 1
+
+        if handPP[0] == tablPP[1]:
+            NPsbl += 2
+
+        if handPP[1] == tablPP[0]: 
+            NPsbl += 4
+    
+        if handPP[1] == tablPP[1]:
+            NPsbl += 8
+
+        return NPsbl
+
 
     def getPiecPair(self,piecNum):
+        """Get the pair of numbers that represent the piece (e.g., [0,0], 
+        [2,3], [4,4], [5,6]]), given its piece number (e.g., 0, 14, 22, 26)."""
+
         pair = [0,0]
         if piecNum < 7:
             pair[1] = piecNum
@@ -75,9 +77,12 @@ class domino():
         return pair
         
     def getPiecNum(self,piecPair):
+        """Gets the piece number (e.g., 0, 14, 22, 26) given the pair of 
+        numbers that represent the piece (e.g., [0,0], [2,3], [4,4], [5,6])."""
+
         piecPair.sort()
         num = 0
-        
+
         for ind in range(6):
             if piecPair[0] > ind:
                 num += 6-ind
@@ -88,17 +93,34 @@ class domino():
 class player():
 
     
-    def __init__(self,plNumb, isAuto, hand, strat='basic'):
+    def __init__(self,plNumb, isAuto, hand, strat='rand'):
         self.plNumb = plNumb
         self.isAuto = isAuto
         self.strat = strat
         self.hand = hand
         
     def play(self,currPiec,piecHist,play27=False):
+        """This method chooses the piece to be played (if such piece exists), 
+        its orientation and placement, and then removes the piece from the 
+        player's hand (again, if it is the case). 
+        
+        Orientation is True for a lesser side fitting the table and exposing
+        a greater side (e.g., placing a [2,3] at an end with an exposed 2)
+        and False for the opposite. Of course, this makes no difference for 
+        double pieces. 
+        
+        Position is either 0 or 1: 0 for the left (lesser) side, and 1 for the
+        right (greater) side. Again, this makes no difference if the current 
+        state is equivalent to a double piece, e.g., [4,4].
+        """
+        
         dom = domino()
         
-        # 
+        # This first part is concerned with choosing a piece to be played
         playPiec = None
+        
+        posi = None
+        ornt = None
         
         # This is to start a match with the [6,6]. No choice here.
         if play27:
@@ -113,28 +135,59 @@ class player():
                 psbl = []
                 
                 for ind in self.hand:
-                    if dom.isComp(ind,currPiec):
-                        psbl.append(ind)
-                    
+                    psblIndx = dom.isComp(ind,currPiec)
+                    if psblIndx > 0:
+                        print("Debug: possib. for piece #" + \
+                              str(ind) + ": " + str(psblIndx))
+                        if psblIndx % 2 == 1:
+                            psbl.append([ind,0,True])
+                            psblIndx -= 1
+                        if psblIndx % 4 == 2:
+                            psbl.append([ind,1,True])
+                            psblIndx -= 2
+                        if psblIndx % 8 == 4:
+                            psbl.append([ind,0,False])
+                            psblIndx -= 4
+                        if psblIndx > 0:
+                            psbl.append([ind,1,False])
+                            psblIndx -= 4
+                        #
+                    #
+                #
+                print("Debug: calculated possibilities for player #",self.plNumb)
+                print(psbl)
+                
             # HERE IS WHERE THE PLAYER MAKES THE CHOICE
             if len(psbl) > 0:                
                 if self.isAuto:
                     
+                    if self.strat == 'rand':
+                        # Random stategy: play anything
+                        playPiec,posi,ornt = random.choice(psbl)
                     if self.strat == 'basic':
                         # Basic stategy: play the highest possible piece
-                        playPiec = psbl[-1]
+                        print("Not implemented yet!")
                     
                 else:
                     # MANUAL MODE
+                    currPiecPair = dom.getPiecPair(currPiec)
                     keepAsk = True
                     while keepAsk:
                         print("\nChoose the piece to be played:")
                         for ind in range(len(psbl)):
-                            strPrint = ' - ' + str(ind) + ' : '
-                            strPrint += str(dom.getPiecPair(psbl[ind]))
-                            strPrint += '(' + str(psbl[ind]) + ')'
-        
-                            print(strPrint)
+                            piec,posi,ornt = psbl[ind]
+                            strPrnt = ' - ' + str(ind) + ' : '
+                            strPrnt += str(dom.getPiecPair(piec))
+                            strPrnt += '(' + str(piec) + ') in the '
+                            if posi == 0:
+                                strPrnt += 'left position (by the '
+                            else:
+                                strPrnt += 'right position (by the '
+
+                            strPrnt += str(currPiecPair[posi])
+                            strPrnt += ')'
+                            
+                            print(strPrnt)
                                                     
                         strChoice = input("  >> ")
                         try:
@@ -143,17 +196,24 @@ class player():
                         except ValueError:
                             isInt = False
                         
-                        if isInt and choice > -1 and choice <= len(psbl):
+                        if isInt and choice > -1 and choice < len(psbl):
                             keepAsk = False
                         else:
                             print("Error while parsing input.")
                             print("Please try again.")
                     #
-                    playPiec = psbl[choice]
+                    playPiec,posi,ornt = psbl[choice]
                 
         if playPiec is not None:
-            print("\nPlayer #" + str(self.plNumb) + ": I've played piece " + \
-                  str(dom.getPiecPair(playPiec)) + " (" + str(playPiec) + ")!")
+            strPrnt = "\nPlayer #" + str(self.plNumb) + \
+            ": I've played piece " + str(dom.getPiecPair(playPiec)) + " (" + \
+            str(playPiec) + ") at the "
+            if posi == 0:
+                strPrnt += "left side!"
+            else:
+                strPrnt += "right side!"
+            print(strPrnt)
+
             self.hand.remove(playPiec)
         else:
             print("Player #" + str(self.plNumb) + ": passon!")
@@ -161,4 +221,4 @@ class player():
         if self.isAuto:
             input("Press any key to continue...")
         
-        return playPiec
+        return playPiec, posi, ornt
