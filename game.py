@@ -57,77 +57,174 @@ class table():
             
     def play(self,isFirst=False):
         """ Put the players to play! """
-        
-        print("\nIn table.play.")
 
         dom = domino()
-                
+        win = None
         pl = self.players[self.plays]
-        piec,posi,ornt = pl.play(self.currPiec,self.piecHist,play27=isFirst)
+        if not pl.isAuto:
+            self.showTabl()
         
+        move = pl.play(self.currPiec, self.piecHist, play27=isFirst)
+        piec, posi, ornt = move
         self.piecHist.append(piec)
 
         if piec is not None:
-            if self.currPiec is None:
-                self.currPiec = piec
-            else:
-                # update current piece
+            # Player has played a proper piece
+            
+            if len(pl.hand) == 0:
+                # this player has just finished the game!
+                win = self.plays % 2
                 
-                piecPair = dom.getPiecPair(piec)
-                currPiecPair = dom.getPiecPair(self.currPiec)
-                
-                if ornt:
-                    # True orientation: 
-                    # greater side exposed, lesser side replaced
-                    ppIndx = 1
-                else:
-                    # False orientation: 
-                    # lesser side exposed, greater side replaced
-                    ppIndx = 0
-                    
-                if posi == 0:
-                    # left position. Replace lesser side
-                    currPiecPair[0] = piecPair[ppIndx]
-                else:
-                    # right position. Replace greater side
-                    currPiecPair[1] = piecPair[ppIndx]
-
-                self.currPiec = dom.getPiecNum(currPiecPair)
-        
-        # Find out if player has won
-        if len(pl.hand) == 0:
-            win = self.plays % 2
-        else:
-            # Deadlock test
-            if len(self.piecHist) > 4 and \
-                (self.piecHist[-1] is None) and \
-                (self.piecHist[-2] is None) and \
-                (self.piecHist[-3] is None) and \
-                (self.piecHist[-4] is None):
-                ptOdd, ptEvn = 0, 0
-                for indPl in range(4):
-                    for ind in self.players[indPl].hand:
-                        pair = dom.getPiecPair(ind)
-                        if indPl % 2 == 0:
-                            ptEvn += (pair[0]+pair[1])
-                        else: 
-                            ptOdd += (pair[0]+pair[1])
-
-                # TODO: solve the tie condition in a less biased way
-                if ptEvn <= ptOdd:
-                    win = 0
-                elif ptOdd < ptEvn:
-                    win = 1
-                    
+                self.specFnshTest(move)
             else:
-                 win = None   
+                self.updtCurrPiec(move)
             #
+        #
+        
+        # Deadlock test
+        if len(self.piecHist) > 4 and \
+            (self.piecHist[-1] is None) and \
+            (self.piecHist[-2] is None) and \
+            (self.piecHist[-3] is None) and \
+            (self.piecHist[-4] is None):
+            ptOdd, ptEvn = 0, 0
+            for indPl in range(4):
+                for ind in self.players[indPl].hand:
+                    pair = dom.getPiecPair(ind)
+                    if indPl % 2 == 0:
+                        ptEvn += (pair[0]+pair[1])
+                    else: 
+                        ptOdd += (pair[0]+pair[1])
+
+            # TODO: solve the tie condition in a less biased way
+            print("\nDeadlock!")
+            print("Even team:",ptEvn,"points, Odd team:",ptOdd,"points...")
+            if ptEvn <= ptOdd:
+                win = 0
+            elif ptOdd < ptEvn:
+                win = 1
+            #
+        #
             
         # Next player to play
         self.plays = (self.plays+1) % 4
         
         return win
 
+    def updtCurrPiec(self,move):
+        """Update current piece. """
+        dom = domino()
+        piec,posi,ornt = move
+        
+        if self.currPiec is None:
+            self.currPiec = piec
+        else:
+            piecPair = dom.getPiecPair(piec)
+            currPiecPair = dom.getPiecPair(self.currPiec)
+            
+            if ornt:
+                # True orientation: 
+                # greater side exposed, lesser side replaced
+                ppIndx = 1
+            else:
+                # False orientation: 
+                # lesser side exposed, greater side replaced
+                ppIndx = 0
+                
+            if posi == 0:
+                # left position. Replace lesser side
+                currPiecPair[0] = piecPair[ppIndx]
+            else:
+                # right position. Replace greater side
+                currPiecPair[1] = piecPair[ppIndx]
+
+            self.currPiec = dom.getPiecNum(currPiecPair)
+        #
+        
+    def specFnshTest(self,move):
+        print('-'*80)
+        print('Game finished!\n')
+        dom = domino()
+
+        piec, _, _ = move
+        piecPair = dom.getPiecPair(piec)
+        
+        # Test for final double piece
+        if piecPair[0] == piecPair[1]:
+            isCarr = True
+        else: 
+            isCarr = False
+            
+        # Test for finish at both ends
+        compScor = dom.isComp(self.currPiec,piec)
+        # 1 & 2, or 4 & 8
+        isOne, isTwo, isFour, isEig = False, False, False, False
+        if compScor % 2 == 1:
+            isOne = True
+            compScor -= 1
+        if compScor % 4 == 2:
+            isTwo = True
+            compScor -= 2
+        if compScor % 8 == 4:
+            isFour = True
+            compScor -= 4
+        if compScor > 0:
+            isEig = True
+            
+        if (isOne and isTwo) or (isFour and isEig):
+            bothSide = True
+        else:
+            bothSide = False
+        
+
+        # Final count for points        
+        if isCarr:
+            if bothSide:
+                nPtsAdd = 4
+                print("\n----- CRUZADO!! -----")
+            else:
+                nPtsAdd = 2
+                print("\n----- CARROÇA!! -----")
+        else:
+            if bothSide:
+                nPtsAdd = 3
+                print("\n----- LAILOT!!  -----")
+            else:
+                nPtsAdd = 1
+                print("\n----- SIMPLES!  -----")
+        return nPtsAdd
+
+    def showTabl(self):
+
+        dom = domino()
+        
+        print('-'*80)
+        print("\n-> This is the played history:")
+        indPl = self.starts
+        #print(indPl)
+        for ind in self.piecHist:
+            #print(ind)
+            strPrnt = "Pl." + str(indPl) + ": "
+            #print("strPrnt = '"+strPrnt+"'")
+            
+            if ind is None:
+                strPrnt += "None"
+            else:
+                strPrnt += str(dom.getPiecPair(ind))
+                strPrnt += " (" + str(ind) + ")"
+            print(strPrnt)
+            indPl = (indPl+1) % 4
+        #
+        cp = self.currPiec
+        if cp is not None:
+            print("\n-> This is the current piece (state) in the table:")
+            print(str(cp)+ " (" + str(dom.getPiecPair(cp)) + ")")
+        #
+        print("\n-> These are the players' hands:")
+        for pl in range(4):
+            p = self.players[pl]
+            print(" Pl." + str(pl) + ": " + str(len(p.hand)) + " pieces.")
+        
     def showAll(self):
         dom = domino()
         
@@ -162,18 +259,16 @@ class match():
         print('-'*80)
         print("\nNew match!")
         tab = table(starts=starts)
-        tab.showAll()
+        #tab.showAll()
         
         # First piece!
         tab.play(isFirst=True)
-        tab.showAll()
+        #tab.showAll()
         
-        keepPlay = True
-        while keepPlay:
+        win = None
+        while win is None:
             win = tab.play()
-            tab.showAll()
-            if win is not None:
-                keepPlay = False
+            #tab.showAll()
         print("\n\n\nGAME FINISHED!")
         if win % 2 == 0:
             print("\n    EVEN team wins!")

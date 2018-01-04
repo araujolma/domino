@@ -18,7 +18,4 @@ Main file for domino project.
 from game import match
 
 
-print("\nAtenção: jogo ainda não está ok!")
-print("Caso se possa jogar de duas formas distintas, o jogo ignora isso!!")
-input("\nPressione alguma coisa para continuar!")
 match()

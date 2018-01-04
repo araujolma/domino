@@ -99,6 +99,80 @@ class player():
         self.strat = strat
         self.hand = hand
         
+    def promUser(self,currPiec,psbl):
+        """Prompt user for input, showing his/her possibilities.
+        Returns the index for the possibilites list psbl."""
+        
+        dom = domino()
+        currPiecPair = dom.getPiecPair(currPiec)
+
+        keepAsk = True
+        while keepAsk:
+            print("\nThis is your hand:")
+            hand = self.hand
+            handStr = ''
+            for ind in range(len(hand)):
+                handStr += str(dom.getPiecPair(hand[ind]))
+                handStr += ', '
+            print(handStr)
+            print("\nChoose the piece to be played:")
+            for ind in range(len(psbl)):
+                piec,posi,ornt = psbl[ind]
+                strPrnt = ' - ' + str(ind) + ' : '
+                strPrnt += str(dom.getPiecPair(piec))
+                strPrnt += '(' + str(piec) + ') in the '
+                if posi == 0:
+                    strPrnt += 'left position (by the '
+                else:
+                    strPrnt += 'right position (by the '
+
+                strPrnt += str(currPiecPair[posi])
+                strPrnt += ')'
+                
+                print(strPrnt)
+                                        
+            strChoice = input("  >> ")
+            try:
+                choice = int(strChoice)
+                isInt = True
+            except ValueError:
+                isInt = False
+            
+            if isInt and choice > -1 and choice < len(psbl):
+                keepAsk = False
+            else:
+                print("Error while parsing input.")
+                print("Please try again.")
+        #
+        return choice
+        
+    def getPsbl(self,currPiec):
+        dom = domino()
+        psbl = []
+                
+        for ind in self.hand:
+            psblIndx = dom.isComp(ind,currPiec)
+            piecPair = dom.getPiecPair(ind)
+            if psblIndx > 0:
+                if psblIndx % 2 == 1:
+                    psbl.append([ind,0,True])
+                    psblIndx -= 1
+                if psblIndx % 4 == 2:
+                    psbl.append([ind,1,True])
+                    psblIndx -= 2
+                if psblIndx % 8 == 4:
+                    if piecPair[0] != piecPair[1]:
+                        psbl.append([ind,0,False])
+                    psblIndx -= 4
+                if psblIndx > 0:
+                    if piecPair[0] != piecPair[1]:
+                        psbl.append([ind,1,False])
+                #
+            #
+        #
+        return psbl
+        
+        
     def play(self,currPiec,piecHist,play27=False):
         """This method chooses the piece to be played (if such piece exists), 
         its orientation and placement, and then removes the piece from the 
@@ -130,32 +204,13 @@ class player():
             # This is for the beginning case (any piece is ok)
             if currPiec is None:
                 psbl = self.hand
+                # Orientation and position do not apply
             else:
                 # Get the possible pieces to play
-                psbl = []
+                psbl = self.getPsbl(currPiec)
                 
-                for ind in self.hand:
-                    psblIndx = dom.isComp(ind,currPiec)
-                    if psblIndx > 0:
-                        print("Debug: possib. for piece #" + \
-                              str(ind) + ": " + str(psblIndx))
-                        if psblIndx % 2 == 1:
-                            psbl.append([ind,0,True])
-                            psblIndx -= 1
-                        if psblIndx % 4 == 2:
-                            psbl.append([ind,1,True])
-                            psblIndx -= 2
-                        if psblIndx % 8 == 4:
-                            psbl.append([ind,0,False])
-                            psblIndx -= 4
-                        if psblIndx > 0:
-                            psbl.append([ind,1,False])
-                            psblIndx -= 4
-                        #
-                    #
-                #
-                print("Debug: calculated possibilities for player #",self.plNumb)
-                print(psbl)
+                #print("Debug: calculated possibilities for player #",self.plNumb)
+                #print(psbl)
                 
             # HERE IS WHERE THE PLAYER MAKES THE CHOICE
             if len(psbl) > 0:                
@@ -170,38 +225,7 @@ class player():
                     
                 else:
                     # MANUAL MODE
-                    currPiecPair = dom.getPiecPair(currPiec)
-                    keepAsk = True
-                    while keepAsk:
-                        print("\nChoose the piece to be played:")
-                        for ind in range(len(psbl)):
-                            piec,posi,ornt = psbl[ind]
-                            strPrnt = ' - ' + str(ind) + ' : '
-                            strPrnt += str(dom.getPiecPair(piec))
-                            strPrnt += '(' + str(piec) + ') in the '
-                            if posi == 0:
-                                strPrnt += 'left position (by the '
-                            else:
-                                strPrnt += 'right position (by the '
-
-                            strPrnt += str(currPiecPair[posi])
-                            strPrnt += ')'
-                            
-                            print(strPrnt)
-                                                    
-                        strChoice = input("  >> ")
-                        try:
-                            choice = int(strChoice)
-                            isInt = True
-                        except ValueError:
-                            isInt = False
-                        
-                        if isInt and choice > -1 and choice < len(psbl):
-                            keepAsk = False
-                        else:
-                            print("Error while parsing input.")
-                            print("Please try again.")
-                    #
+                    choice = self.promUser(currPiec,psbl)
                     playPiec,posi,ornt = psbl[choice]
                 
         if playPiec is not None:
@@ -218,7 +242,7 @@ class player():
         else:
             print("Player #" + str(self.plNumb) + ": passon!")
             
-        if self.isAuto:
-            input("Press any key to continue...")
+#        if self.isAuto:
+#            input("Press any key to continue...")
         
         return playPiec, posi, ornt
