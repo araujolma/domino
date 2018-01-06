@@ -240,6 +240,7 @@ class player():
                     # MANUAL MODE
                     choice = self.promUser(currPiec,psbl)
                     playPiec,posi,ornt = psbl[choice]
+
                 
         if playPiec is not None:
             strPrnt = "\nPlayer #" + str(self.plNumb) + \

@@ -19,6 +19,7 @@ class table():
         
         
         self.starts = starts
+        self.nPtsAdd = 1
         self.piecHist = []
         self.currPiec = None      
         
@@ -164,24 +165,25 @@ class table():
         #
         
     def specFnshTest(self,move):
-        print('\n' + '-'*80)
-        print('Game finished!\n')
+        #print('\n' + '-'*80)
+        #print('Game finished!\n')
         dom = domino()
 
         piec, _, _ = move
         piecPair = dom.getPiecPair(piec)
 
-        print("Final piece:",piecPair)
+        #print("Final piece:",piecPair)
         # Test for final double piece
         if piecPair[0] == piecPair[1]:
             isCarr = True
         else: 
             isCarr = False
             
-        print("Table state before last piece:",dom.getPiecPair(self.currPiec))
+        #print("Table state before last piece:",dom.getPiecPair(self.currPiec))
         # Test for finish at both ends
         compScor = dom.isComp(piec,self.currPiec)
-        print(compScor)
+        #print(compScor)
+        
         # 1 & 2, or 4 & 8
         isOne, isTwo, isFour, isEig = False, False, False, False
         if compScor % 2 == 1:
@@ -196,10 +198,10 @@ class table():
         if compScor > 0:
             isEig = True
             
-        print("isOne:",isOne)
-        print("isTwo:",isTwo)        
-        print("isFour:",isFour)
-        print("isEig:",isEig)
+        #print("isOne:",isOne)
+        #print("isTwo:",isTwo)        
+        #print("isFour:",isFour)
+        #print("isEig:",isEig)
         
         if (isTwo and isFour) or (isEig and isOne):
             bothSide = True
@@ -210,18 +212,19 @@ class table():
         if isCarr:
             if bothSide:
                 nPtsAdd = 4
-                print("\n----- CRUZADO!! -----")
+                print("\n----- CRUZADO!! 4 pontos! -----")
             else:
                 nPtsAdd = 2
-                print("\n----- CARROÇA!! -----")
+                print("\n----- CARROÇA!! 2 pontos -----")
         else:
             if bothSide:
                 nPtsAdd = 3
-                print("\n----- LAILOT!!  -----")
+                print("\n----- LAILOT!!  3 pontos -----")
             else:
                 nPtsAdd = 1
-                print("\n----- SIMPLES!  -----")
-        return nPtsAdd
+                print("\n----- SIMPLES!  1 ponto -----")
+        
+        self.nPtsAdd = nPtsAdd
 
     def showTabl(self):
 
@@ -284,10 +287,14 @@ class table():
 class match():
     """Class match plays a simple match."""
 
-    def __init__(self,starts=-1):
+    def play(starts=-1):
         print('-'*80)
         print("\nNew match!")
         tab = table(starts=starts)
+#        self.tab = tab
+#        self.EvnPts = 0
+#        self.OddPts = 0
+
         #tab.showAll()
         
         # First piece!
@@ -298,21 +305,47 @@ class match():
         while win is None:
             win = tab.play()
             #tab.showAll()
+        print('\n'+'-'*80)
         print("\n\n\nGAME FINISHED!")
         if win % 2 == 0:
-            print("\n    EVEN team wins!")
+            print("\n    EVEN team won this match!")
             print("\nCONGRATULATIONS!!")
         else:
-            print("\n    ODD team wins!")
-            print("\nSorry, you lost!")
-    
-    
+            print("\n    ODD team won this match!")
+            print("\nSorry, you lost!")        
 
-
-        
+        return win, tab.nPtsAdd
+            
 class champ():
     """Class champ plays a championship."""
     
+    def __init__(self):
+        print('-'*80)
+        print('-'*80)
+        print("\nNew championship!\n")
+        print('-'*80)
         
+        EvnPts = 0
+        OddPts = 0
+        starts = -1
+        while EvnPts < 6 and OddPts < 6:
+            win, ptsAdd = match.play(starts=starts)
 
-
+            if win % 2 == 0:
+                EvnPts += ptsAdd
+            else:
+                OddPts += ptsAdd
+            
+            starts = (starts+1)%4
+            print("Even team:",EvnPts)
+            print("Odd  team:",OddPts)
+            print('\nPress any key to continue...')
+            input(' >> ')
+        #
+        
+        if EvnPts >= 6:
+            print('\n\n\n YOU HAVE WON THIS GAME!\n\n\n')
+            print('YOU ARE TOTALLY EXCELLENT!')
+        else:
+            print('\n\n\nSorry, it seems you lost this game...\n\n\n')
+            print('Good luck on the next one!')

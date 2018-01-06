@@ -15,7 +15,11 @@ Main file for domino project.
 #
 #print(domino.piecList)
 
-from game import match
+#from game import match
 
+#match()
+#pts = match.play()
 
-match()
+from game import champ
+
+champ()
