@@ -19,6 +19,7 @@ class table():
         
         
         self.starts = starts
+        self.strtWith = None
         self.nPtsAdd = 1
         self.piecHist = []
         self.currPiec = None      
@@ -65,14 +66,17 @@ class table():
                     #
                 #
                 if keepLook:
+                    print("\nPiece " + str(startList[thisDblIndx]) + \
+                          " is not in the player's hands.")
+                    print("\nPress any key to continue...")
+                    input("  >> ")
                     thisDblIndx += 1
                 #
             #
             self.starts = plyrInd
             self.strtWith = startList[thisDblIndx]
-            print("\nPlayer #" + str(self.starts) + " will begin.\n")
         #
-        
+        print("\nPlayer #" + str(self.starts) + " will begin.\n")        
         self.plays = self.starts
             
     def play(self,isFirst=False):
@@ -84,6 +88,7 @@ class table():
         if not pl.isAuto:
             self.showTabl()
         if isFirst:
+#            print("I'm here.")
             move = pl.play(self.currPiec, self.piecHist, \
                            strtWith=self.strtWith)
         else:
@@ -298,7 +303,10 @@ class match():
         #tab.showAll()
         
         # First piece!
-        tab.play(isFirst=True)
+        if starts == -1:
+            tab.play(isFirst=True)
+        else:
+            tab.play()
         #tab.showAll()
         
         win = None
@@ -314,7 +322,7 @@ class match():
             print("\n    ODD team won this match!")
             print("\nSorry, you lost!")        
 
-        return win, tab.nPtsAdd
+        return win, tab.nPtsAdd, tab.starts
             
 class champ():
     """Class champ plays a championship."""
@@ -324,28 +332,34 @@ class champ():
         print('-'*80)
         print("\nNew championship!\n")
         print('-'*80)
+        print('-'*80)
+        
+        print("\nPress any key to continue...")
+        input("  >> ")
         
         EvnPts = 0
         OddPts = 0
         starts = -1
         while EvnPts < 6 and OddPts < 6:
-            win, ptsAdd = match.play(starts=starts)
+            win, ptsAdd, started = match.play(starts=starts)
 
             if win % 2 == 0:
                 EvnPts += ptsAdd
             else:
                 OddPts += ptsAdd
             
-            starts = (starts+1)%4
-            print("Even team:",EvnPts)
+            starts = (started+1)%4
+            print("\nEven team:",EvnPts)
             print("Odd  team:",OddPts)
             print('\nPress any key to continue...')
             input(' >> ')
         #
         
+        print('\n\n\n'+'*'*80)
         if EvnPts >= 6:
-            print('\n\n\n YOU HAVE WON THIS GAME!\n\n\n')
+
+            print('\n YOU HAVE WON THIS GAME!\n')
             print('YOU ARE TOTALLY EXCELLENT!')
         else:
-            print('\n\n\nSorry, it seems you lost this game...\n\n\n')
+            print('\nSorry, it seems you lost this game...\n')
             print('Good luck on the next one!')
