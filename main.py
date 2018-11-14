@@ -22,4 +22,4 @@ Main file for domino project.
 
 from game import champ
 
-champ()
+champ(compSttg=['basic','rand','basic'])

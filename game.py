@@ -11,19 +11,19 @@ import random
 
 
 class table():
-    """Class table acts as both the table itself, holding the history of 
+    """Class table acts as both the table itself, holding the history of
     played pieces, as well as the dealer, asking the players to play."""
 
-    
-    def __init__(self,starts=-1):
-        
-        
+
+    def __init__(self,compSttg,starts=-1):
+
+
         self.starts = starts
         self.strtWith = None
         self.nPtsAdd = 1
         self.piecHist = []
-        self.currPiec = None      
-        
+        self.currPiec = None
+
         # Declare players, set their hands
         self.players = []
 
@@ -31,18 +31,23 @@ class table():
         for ind in range(28):
             newHands.append(ind)
         random.shuffle(newHands)
-        
+
         ind = 0
         isAutoList = [False,True,True,True]
         for plyrInd in range(4):
             pHand = newHands[ind:ind+6]
             pHand.sort()
-            p = player(plNumb=plyrInd, isAuto=isAutoList[plyrInd],hand=pHand)
+            if isAutoList[plyrInd]:
+                p = player(plNumb=plyrInd, hand=pHand, \
+                           isAuto=isAutoList[plyrInd], \
+                           sttg=compSttg[plyrInd-1])
+            else:
+                p = player(plNumb=0, hand=pHand, isAuto=False)
             self.players.append(p)
             ind += 6
         print(newHands)
         print("\nPieces dealt.")
-        
+
         # If there is no one to start, find who has the [6,6] (piece #27)
         # If no one has this piece, then look for the [5,5], and so on, up to
         # the last possible double piece, [2,2]
@@ -76,9 +81,9 @@ class table():
             self.starts = plyrInd
             self.strtWith = startList[thisDblIndx]
         #
-        print("\nPlayer #" + str(self.starts) + " will begin.\n")        
+        print("\nPlayer #" + str(self.starts) + " will begin.\n")
         self.plays = self.starts
-            
+
     def play(self,isFirst=False):
         """ Put the players to play! """
 
@@ -98,17 +103,17 @@ class table():
 
         if piec is not None:
             # Player has played a proper piece
-            
+
             if len(pl.hand) == 0:
                 # this player has just finished the game!
                 win = self.plays % 2
-                
+
                 self.specFnshTest(move)
             else:
                 self.updtCurrPiec(move)
             #
         #
-        
+
         # Deadlock test
         if len(self.piecHist) > 4 and \
             (self.piecHist[-1] is None) and \
@@ -121,44 +126,45 @@ class table():
                     pair = dom.getPiecPair(ind)
                     if indPl % 2 == 0:
                         ptEvn += (pair[0]+pair[1])
-                    else: 
+                    else:
                         ptOdd += (pair[0]+pair[1])
 
             # TODO: solve the tie condition in a less biased way
             print("\nDeadlock!")
-            print("Even team:",ptEvn,"points, Odd team:",ptOdd,"points...")
+            self.showAll()
+            print("\nEven team:",ptEvn,"points, Odd team:",ptOdd,"points...")
             if ptEvn <= ptOdd:
                 win = 0
             elif ptOdd < ptEvn:
                 win = 1
             #
         #
-            
+
         # Next player to play
         self.plays = (self.plays+1) % 4
-        
+
         return win
 
     def updtCurrPiec(self,move):
         """Update current piece. """
         dom = domino()
         piec,posi,ornt = move
-        
+
         if self.currPiec is None:
             self.currPiec = piec
         else:
             piecPair = dom.getPiecPair(piec)
             currPiecPair = dom.getPiecPair(self.currPiec)
-            
+
             if ornt:
-                # True orientation: 
+                # True orientation:
                 # greater side exposed, lesser side replaced
                 ppIndx = 1
             else:
-                # False orientation: 
+                # False orientation:
                 # lesser side exposed, greater side replaced
                 ppIndx = 0
-                
+
             if posi == 0:
                 # left position. Replace lesser side
                 currPiecPair[0] = piecPair[ppIndx]
@@ -168,7 +174,7 @@ class table():
 
             self.currPiec = dom.getPiecNum(currPiecPair)
         #
-        
+
     def specFnshTest(self,move):
         #print('\n' + '-'*80)
         #print('Game finished!\n')
@@ -181,14 +187,14 @@ class table():
         # Test for final double piece
         if piecPair[0] == piecPair[1]:
             isCarr = True
-        else: 
+        else:
             isCarr = False
-            
+
         #print("Table state before last piece:",dom.getPiecPair(self.currPiec))
         # Test for finish at both ends
         compScor = dom.isComp(piec,self.currPiec)
         #print(compScor)
-        
+
         # 1 & 2, or 4 & 8
         isOne, isTwo, isFour, isEig = False, False, False, False
         if compScor % 2 == 1:
@@ -202,18 +208,18 @@ class table():
             compScor -= 4
         if compScor > 0:
             isEig = True
-            
+
         #print("isOne:",isOne)
-        #print("isTwo:",isTwo)        
+        #print("isTwo:",isTwo)
         #print("isFour:",isFour)
         #print("isEig:",isEig)
-        
+
         if (isTwo and isFour) or (isEig and isOne):
             bothSide = True
         else:
             bothSide = False
 
-        # Final count for points        
+        # Final count for points
         if isCarr:
             if bothSide:
                 nPtsAdd = 4
@@ -228,13 +234,13 @@ class table():
             else:
                 nPtsAdd = 1
                 print("\n----- SIMPLES!  1 ponto -----")
-        
+
         self.nPtsAdd = nPtsAdd
 
     def showTabl(self):
 
         dom = domino()
-        
+
         print('-'*80)
         print("\n-> This is the played history:")
         indPl = self.starts
@@ -243,7 +249,7 @@ class table():
             #print(ind)
             strPrnt = "Pl." + str(indPl) + ": "
             #print("strPrnt = '"+strPrnt+"'")
-            
+
             if ind is None:
                 strPrnt += "None"
             else:
@@ -261,12 +267,12 @@ class table():
         for pl in range(4):
             p = self.players[pl]
             print(" Pl." + str(pl) + ": " + str(len(p.hand)) + " pieces.")
-        
+
     def showAll(self):
         dom = domino()
-        
+
         print('-'*80)
-        print("\nThis is the current table:")
+        print("\nThis is the current piece history:")
         for ind in self.piecHist:
             if ind is None:
                 print(str(ind))
@@ -287,28 +293,28 @@ class table():
                 handStr += str(dom.getPiecPair(p.hand[ind]))
                 handStr += ', '
             print(handStr)
-        
+
 
 class match():
     """Class match plays a simple match."""
 
-    def play(starts=-1):
+    def play(compSttg,starts=-1):
         print('-'*80)
         print("\nNew match!")
-        tab = table(starts=starts)
+        tab = table(starts=starts,compSttg=compSttg)
 #        self.tab = tab
 #        self.EvnPts = 0
 #        self.OddPts = 0
 
         #tab.showAll()
-        
+
         # First piece!
         if starts == -1:
             tab.play(isFirst=True)
         else:
             tab.play()
         #tab.showAll()
-        
+
         win = None
         while win is None:
             win = tab.play()
@@ -320,41 +326,54 @@ class match():
             print("\nCONGRATULATIONS!!")
         else:
             print("\n    ODD team won this match!")
-            print("\nSorry, you lost!")        
+            print("\nSorry, you lost!")
 
         return win, tab.nPtsAdd, tab.starts
-            
+
 class champ():
     """Class champ plays a championship."""
-    
-    def __init__(self):
+
+    def __init__(self,compSttg=None):
         print('-'*80)
         print('-'*80)
         print("\nNew championship!\n")
         print('-'*80)
         print('-'*80)
-        
+
+        print("\nThere will be four players:")
+        print(" - 0 (You), ")
+        print(" - 1 (Computer opponent), ")
+        print(" - 2 (Computer ally), ")
+        print(" - 3 (Computer opponent).")
+
+        if compSttg is None:
+            compSttg = ['rand','rand','rand']
+
+        print("\n Strategy for the computers:")
+        print(compSttg)
+
         print("\nPress any key to continue...")
         input("  >> ")
-        
+
+
         EvnPts = 0
         OddPts = 0
         starts = -1
         while EvnPts < 6 and OddPts < 6:
-            win, ptsAdd, started = match.play(starts=starts)
+            win, ptsAdd, started = match.play(starts=starts,compSttg=compSttg)
 
             if win % 2 == 0:
                 EvnPts += ptsAdd
             else:
                 OddPts += ptsAdd
-            
+
             starts = (started+1)%4
             print("\nEven team:",EvnPts)
             print("Odd  team:",OddPts)
             print('\nPress any key to continue...')
             input(' >> ')
         #
-        
+
         print('\n\n\n'+'*'*80)
         if EvnPts >= 6:
 
