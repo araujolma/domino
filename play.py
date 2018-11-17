@@ -7,7 +7,22 @@ Created on Tue Jan  2 15:34:56 2018
 """
 import random
 
-class domino():
+class msgr:
+
+    def __init__(self,InptLang='eng'):
+        if not(InptLang == 'eng' or InptLang == 'por'):
+            print("Unknown language.")
+            raise Exception
+        else:
+            self.lang=InptLang
+
+    def prnt(self,textDict):
+        if isinstance(textDict,dict):
+            print(textDict.get(self.lang,'eng'))
+        else:
+            print(textDict)
+
+class domino:
     """Class domino holds the basics for the game: piece list, compatibility
     test, etc."""
 
@@ -48,8 +63,8 @@ class domino():
 
         return NPsbl
 
-
-    def getPiecPair(self,piecNum):
+    @staticmethod
+    def getPiecPair(piecNum):
         """Get the pair of numbers that represent the piece (e.g., [0,0],
         [2,3], [4,4], [5,6]]), given its piece number (e.g., 0, 14, 22, 26)."""
 
@@ -76,7 +91,8 @@ class domino():
 
         return pair
 
-    def getPiecNum(self,piecPair):
+    @staticmethod
+    def getPiecNum(piecPair):
         """Gets the piece number (e.g., 0, 14, 22, 26) given the pair of
         numbers that represent the piece (e.g., [0,0], [2,3], [4,4], [5,6])."""
 
@@ -90,7 +106,8 @@ class domino():
 
         return num
 
-class player():
+class player:
+    """ This class represents the player."""
 
 
     def __init__(self,plNumb, isAuto, hand, sttg='rand'):
@@ -99,53 +116,75 @@ class player():
         self.sttg = sttg
         self.hand = hand
 
-    def promUser(self,currPiec,psbl):
+    def promUser(self,currPiec,psbl,msgr=None):
         """Prompt user for input, showing his/her possibilities.
         Returns the index for the possibilites list psbl."""
 
         dom = domino()
         if currPiec is not None:
             currPiecPair = dom.getPiecPair(currPiec)
+        else:
+            currPiecPair = [0,0]
 
         keepAsk = True
         while keepAsk:
-            print("\nThis is your hand:")
+            msgr.prnt({'eng': "\nThis is your hand:",
+                       'por': "\nEsta é a sua mão:"})
             hand = self.hand
             handStr = ''
             for ind in range(len(hand)):
                 handStr += str(dom.getPiecPair(hand[ind]))
                 handStr += ', '
-            print(handStr)
+            msgr.prnt(handStr)
+
             if len(psbl) == 0:
-                print("\nI'm sorry, there is nothing you can play now.")
-                print("\nPress any key to continue...")
+                msgr.prnt({'eng': "\nI'm sorry, there is nothing you can play now." +
+                                  "\nPress any key to continue...",
+                           'por': "\nDesculpe, não há o que jogar agora." +
+                                  "\nPressione qualquer tecla para continuar..."})
                 input("  >> ")
                 keepAsk = False
                 choice = None
             else:
                 if len(psbl) == 1:
-                    print("\nThere is only one possibility:")
+                    msgr.prnt({'eng': "\nThere is only one possibility:",
+                               'por': "\nSó há uma possibilidade:"})
                 else:
-                    print("\nChoose the piece to be played:")
+                    msgr.prnt({'eng': "\nChoose the piece to be played:",
+                               'por': "\nEscolha a peça a ser jogada:"})
 
                 for ind in range(len(psbl)):
                     piec,posi,ornt = psbl[ind]
                     strPrnt = ' - ' + str(ind) + ' : '
                     strPrnt += str(dom.getPiecPair(piec))
                     if currPiec is not None:
-                        strPrnt += '(' + str(piec) + ') at the '
+
+                        str1 = ''; str2 = ''; str3 = ''
+                        if msgr.lang == 'eng':
+                            str1 = '(' + str(piec) + ') at the '
+                            str2 = 'left position (by the '
+                            str3 = 'right position (by the '
+                        elif msgr.lang == 'por':
+                            str1 = '(' + str(piec) + ') ao lado '
+                            str2 = 'esquerdo (junto ao '
+                            str3 = 'direito (junto ao '
+
                         if posi == 0:
-                            strPrnt += 'left position (by the '
+                            str3 = ''
                         else:
-                            strPrnt += 'right position (by the '
+                            str2 = ''
+
+                        strPrnt += str1 + str2 + str3
 
                         strPrnt += str(currPiecPair[posi])
                         strPrnt += ')'
 
-                    print(strPrnt)
+                    msgr.prnt(strPrnt)
+                #
 
                 if len(psbl) == 1:
-                    print("Press any key to play it.")
+                    msgr.prnt({'eng': "Press any key to play it.",
+                               'por': "Pressione qualquer tecla para jogá-la."})
                     input("  >> ")
                     choice = 0
                     keepAsk = False
@@ -160,14 +199,17 @@ class player():
                     if isInt and choice > -1 and choice < len(psbl):
                         keepAsk = False
                     else:
-                        print("Error while parsing input.")
-                        print("Please try again.")
+                        msgr.prnt({'eng': "\nError while parsing input." +
+                                          "\nPlease try again.",
+                                   'por': "\nErro ao interpretar entrada." +
+                                          "\nPor favor, tente novamente."})
             #
         #
         return choice
 
     def getPsbl(self,currPiec):
         """Get the possibilities for playing."""
+
         dom = domino()
         psbl = []
         if currPiec is None:
@@ -201,8 +243,7 @@ class player():
         #
         return psbl
 
-
-    def play(self,currPiec,piecHist,strtWith=None):
+    def play(self,currPiec,piecHist,strtWith=None,msgr=None):
         """This method chooses the piece to be played (if such piece exists),
         its orientation and placement, and then removes the piece from the
         player's hand (again, if it is the case).
@@ -222,15 +263,12 @@ class player():
         # This first part is concerned with choosing a piece to be played
         playPiec = strtWith
 
-        posi = None
-        ornt = None
+        posi, ornt = None, None
 
         # strtWith is only used when starting a match with the [6,6], [5,5],
         # etc. No choice in this case.
         if strtWith is None:
             psbl = self.getPsbl(currPiec)
-            #print("Debug: calculated possibilities for player #",self.plNumb)
-            #print(psbl)
 
             if self.isAuto:
                 if len(psbl) > 0:
@@ -247,30 +285,45 @@ class player():
 
             else:
                 # MANUAL MODE
-                choice = self.promUser(currPiec,psbl)
+                choice = self.promUser(currPiec, psbl, msgr=msgr)
                 if choice is None:
                     return None, None, None
                 else:
-                    playPiec,posi,ornt = psbl[choice]
+                    playPiec, posi, ornt = psbl[choice]
         #
 
         if playPiec is not None:
-            strPrnt = "\nPlayer #" + str(self.plNumb) + \
-            ": I've played piece " + str(dom.getPiecPair(playPiec)) + " (" + \
-            str(playPiec) + ") at the "
+            str1 = ''; str2 = ''; str3 = ''
+            if msgr.lang == 'eng':
+                str1 = "\nPlayer #" + str(self.plNumb) + \
+                       ": I've played piece " + \
+                       str(dom.getPiecPair(playPiec)) + " (" + \
+                       str(playPiec) + ") at the "
+                str2 = "left side!"
+                str3 = "right side!"
+            elif msgr.lang == 'por':
+                str1 = "\nJogador #" + str(self.plNumb) + \
+                       ": Joguei a pedra " + \
+                       str(dom.getPiecPair(playPiec)) + " (" + \
+                       str(playPiec) + ") no lado "
+                str2 = "esquerdo!"
+                str3 = "direito!"
+            #
+
             if posi == 0:
-                strPrnt += "left side!"
+                str3 = ''
             else:
-                strPrnt += "right side!"
-            print(strPrnt)
+                str2 = ''
+
+            msgr.prnt(str1+str2+str3)
 
             self.hand.remove(playPiec)
         else:
-            print("Player #" + str(self.plNumb) + ": passon!")
             pair = dom.getPiecPair(currPiec)
-            print("> Has no " + str(pair[0]) + " or " + str(pair[1]) + ".")
 
-#        if self.isAuto:
-#            input("Press any key to continue...")
+            msgr.prnt({'eng': "Player #" + str(self.plNumb) + ": Passed!\n" +
+                              "> Has no " + str(pair[0]) + " or " + str(pair[1]) + ".",
+                       'por': "Jogador #" + str(self.plNumb) + ": Passou!\n" +
+                              "> Não tem " + str(pair[0]) + " nem " + str(pair[1]) + "."})
 
         return playPiec, posi, ornt

@@ -9,20 +9,18 @@ from play import player, domino
 import random
 
 
-
-class table():
+class table:
     """Class table acts as both the table itself, holding the history of
     played pieces, as well as the dealer, asking the players to play."""
 
-
-    def __init__(self,compSttg,starts=-1):
-
+    def __init__(self, compSttg, starts=-1, msgr=None):
 
         self.starts = starts
         self.strtWith = None
         self.nPtsAdd = 1
         self.piecHist = []
         self.currPiec = None
+        self.msgr = msgr
 
         # Declare players, set their hands
         self.players = []
@@ -33,47 +31,55 @@ class table():
         random.shuffle(newHands)
 
         ind = 0
-        isAutoList = [False,True,True,True]
+        isAutoList = [False, True, True, True]
         for plyrInd in range(4):
-            pHand = newHands[ind:ind+6]
+            pHand = newHands[ind:ind + 6]
             pHand.sort()
             if isAutoList[plyrInd]:
-                p = player(plNumb=plyrInd, hand=pHand, \
-                           isAuto=isAutoList[plyrInd], \
-                           sttg=compSttg[plyrInd-1])
+                p = player(plNumb=plyrInd, hand=pHand,
+                           isAuto=isAutoList[plyrInd],
+                           sttg=compSttg[plyrInd - 1])
             else:
                 p = player(plNumb=0, hand=pHand, isAuto=False)
             self.players.append(p)
             ind += 6
-        print(newHands)
-        print("\nPieces dealt.")
+        self.msgr.prnt(newHands)
+
+        self.msgr.prnt({'eng': "\nPieces dealt.",
+                        'por': "\nPeças distribuídas."})
 
         # If there is no one to start, find who has the [6,6] (piece #27)
         # If no one has this piece, then look for the [5,5], and so on, up to
         # the last possible double piece, [2,2]
 
         if starts == -1:
-            startList = [27,25,22,18,13]
+            startList = [27, 25, 22, 18, 13]
             thisDblIndx = 0
             keepLook = True
-            while keepLook:# and thisDblIndx < 5:
-#                print("\nSearching for",thisDblIndx,": piece",startList[thisDblIndx])
+            while keepLook:  # and thisDblIndx < 5:
+                #                print("\nSearching for",thisDblIndx,": piece",startList[thisDblIndx])
                 plyrInd = 0
                 while keepLook and plyrInd < 4:
-#                    print("Searching in player "+str(plyrInd)+"'s hands.")
+                    #                    print("Searching in player "+str(plyrInd)+"'s hands.")
                     pHand = self.players[plyrInd].hand
-#                    print(pHand)
+                    #                    print(pHand)
                     if startList[thisDblIndx] in pHand:
                         keepLook = False
-#                        print("Found it!")
+                    #                        print("Found it!")
                     else:
                         plyrInd += 1
                     #
                 #
                 if keepLook:
-                    print("\nPiece " + str(startList[thisDblIndx]) + \
-                          " is not in the player's hands.")
-                    print("\nPress any key to continue...")
+                    msg = {'eng': "\nPiece " + str(startList[thisDblIndx]) + \
+                                  " is not in the players' hands." + \
+                                  "\nPress any key to continue...",
+                           'por': "\nPedra " + str(startList[thisDblIndx]) + \
+                                  " não está nas mãos dos jogadores." + \
+                                  "\nPressione qualquer tecla " + \
+                                  "para continuar..."}
+                    self.msgr.prnt(msg)
+
                     input("  >> ")
                     thisDblIndx += 1
                 #
@@ -81,10 +87,13 @@ class table():
             self.starts = plyrInd
             self.strtWith = startList[thisDblIndx]
         #
-        print("\nPlayer #" + str(self.starts) + " will begin.\n")
+        self.msgr.prnt({'eng': "\nPlayer #" + str(self.starts) + \
+                               " will begin.\n",
+                        'por': "\nJogador #" + str(self.starts) + \
+                               " vai começar.\n"})
         self.plays = self.starts
 
-    def play(self,isFirst=False):
+    def play(self, isFirst=False):
         """ Put the players to play! """
 
         dom = domino()
@@ -93,11 +102,10 @@ class table():
         if not pl.isAuto:
             self.showTabl()
         if isFirst:
-#            print("I'm here.")
-            move = pl.play(self.currPiec, self.piecHist, \
-                           strtWith=self.strtWith)
+            move = pl.play(self.currPiec, self.piecHist,
+                           strtWith=self.strtWith, msgr=self.msgr)
         else:
-            move = pl.play(self.currPiec, self.piecHist)
+            move = pl.play(self.currPiec, self.piecHist, msgr=self.msgr)
         piec, posi, ornt = move
         self.piecHist.append(piec)
 
@@ -116,23 +124,29 @@ class table():
 
         # Deadlock test
         if len(self.piecHist) > 4 and \
-            (self.piecHist[-1] is None) and \
-            (self.piecHist[-2] is None) and \
-            (self.piecHist[-3] is None) and \
-            (self.piecHist[-4] is None):
+                (self.piecHist[-1] is None) and \
+                (self.piecHist[-2] is None) and \
+                (self.piecHist[-3] is None) and \
+                (self.piecHist[-4] is None):
             ptOdd, ptEvn = 0, 0
             for indPl in range(4):
                 for ind in self.players[indPl].hand:
                     pair = dom.getPiecPair(ind)
                     if indPl % 2 == 0:
-                        ptEvn += (pair[0]+pair[1])
+                        ptEvn += (pair[0] + pair[1])
                     else:
-                        ptOdd += (pair[0]+pair[1])
+                        ptOdd += (pair[0] + pair[1])
 
             # TODO: solve the tie condition in a less biased way
-            print("\nDeadlock!")
+            self.msgr.prnt({'eng': "\nDeadlock!",
+                            'por': "\nTravou!"})
             self.showAll()
-            print("\nEven team:",ptEvn,"points, Odd team:",ptOdd,"points...")
+            self.msgr.prnt({'eng': "\nEven team: " + str(ptEvn) + \
+                                   " points, Odd team: " + str(ptOdd) + \
+                                   " points...",
+                            'por': "\nTime par: " + str(ptEvn) + \
+                                   " pontos, Time ímpar: " + str(ptOdd) + \
+                                   " pontos..."})
             if ptEvn <= ptOdd:
                 win = 0
             elif ptOdd < ptEvn:
@@ -141,14 +155,14 @@ class table():
         #
 
         # Next player to play
-        self.plays = (self.plays+1) % 4
+        self.plays = (self.plays + 1) % 4
 
         return win
 
-    def updtCurrPiec(self,move):
+    def updtCurrPiec(self, move):
         """Update current piece. """
         dom = domino()
-        piec,posi,ornt = move
+        piec, posi, ornt = move
 
         if self.currPiec is None:
             self.currPiec = piec
@@ -175,25 +189,26 @@ class table():
             self.currPiec = dom.getPiecNum(currPiecPair)
         #
 
-    def specFnshTest(self,move):
-        #print('\n' + '-'*80)
-        #print('Game finished!\n')
+    def specFnshTest(self, move):
+        """ Check for special finishings."""
+
+        self.msgr.prnt({'eng': "\nDONE!", 'por': "\nBATI!"})
         dom = domino()
 
         piec, _, _ = move
         piecPair = dom.getPiecPair(piec)
 
-        #print("Final piece:",piecPair)
+        # print("Final piece:",piecPair)
         # Test for final double piece
         if piecPair[0] == piecPair[1]:
             isCarr = True
         else:
             isCarr = False
 
-        #print("Table state before last piece:",dom.getPiecPair(self.currPiec))
+        # print("Table state before last piece:",dom.getPiecPair(self.currPiec))
         # Test for finish at both ends
-        compScor = dom.isComp(piec,self.currPiec)
-        #print(compScor)
+        compScor = dom.isComp(piec, self.currPiec)
+        # print(compScor)
 
         # 1 & 2, or 4 & 8
         isOne, isTwo, isFour, isEig = False, False, False, False
@@ -209,10 +224,10 @@ class table():
         if compScor > 0:
             isEig = True
 
-        #print("isOne:",isOne)
-        #print("isTwo:",isTwo)
-        #print("isFour:",isFour)
-        #print("isEig:",isEig)
+        # print("isOne:",isOne)
+        # print("isTwo:",isTwo)
+        # print("isFour:",isFour)
+        # print("isEig:",isEig)
 
         if (isTwo and isFour) or (isEig and isOne):
             bothSide = True
@@ -220,165 +235,202 @@ class table():
             bothSide = False
 
         # Final count for points
+
         if isCarr:
             if bothSide:
                 nPtsAdd = 4
-                print("\n----- CRUZADO!! 4 pontos! -----")
+                self.msgr.prnt("\n----- CRUZADO!! 4 pts! -----")
             else:
                 nPtsAdd = 2
-                print("\n----- CARROÇA!! 2 pontos -----")
+                self.msgr.prnt("\n----- CARROÇA!! 2 pts! -----")
         else:
             if bothSide:
                 nPtsAdd = 3
-                print("\n----- LAILOT!!  3 pontos -----")
+                self.msgr.prnt("\n----- LAILOT!!  3 pts! -----")
             else:
                 nPtsAdd = 1
-                print("\n----- SIMPLES!  1 ponto -----")
+                self.msgr.prnt("\n-----     OK!  1 pt. -----")
 
         self.nPtsAdd = nPtsAdd
 
-    def showTabl(self):
-
+    def showHist(self):
+        """ Show history of the played pieces. """
         dom = domino()
 
-        print('-'*80)
-        print("\n-> This is the played history:")
+        # Show history
+        self.msgr.prnt({'eng': "\n-> This is the played history:",
+                        'por': "\n-> Este é o histórico de jogadas:"})
         indPl = self.starts
-        #print(indPl)
+        # print(indPl)
         for ind in self.piecHist:
-            #print(ind)
+            # print(ind)
             strPrnt = "Pl." + str(indPl) + ": "
-            #print("strPrnt = '"+strPrnt+"'")
+            # print("strPrnt = '"+strPrnt+"'")
 
             if ind is None:
-                strPrnt += "None"
+                if self.msgr.lang == 'eng':
+                    strPrnt += "Passed."
+                elif self.msgr.lang == 'por':
+                    strPrnt += "Passei."
+                else:
+                    strPrnt += "None"
             else:
-                strPrnt += str(dom.getPiecPair(ind))
-                strPrnt += " (" + str(ind) + ")"
-            print(strPrnt)
-            indPl = (indPl+1) % 4
+                strPrnt += str(dom.getPiecPair(ind)) + " (" + str(ind) + ")"
+            #
+            self.msgr.prnt(strPrnt)
+            indPl = (indPl + 1) % 4
         #
-        cp = self.currPiec
-        if cp is not None:
-            print("\n-> This is the current piece (state) in the table:")
-            print(str(cp)+ " (" + str(dom.getPiecPair(cp)) + ")")
-        #
-        print("\n-> These are the players' hands:")
-        for pl in range(4):
-            p = self.players[pl]
-            print(" Pl." + str(pl) + ": " + str(len(p.hand)) + " pieces.")
 
-    def showAll(self):
+    def showStat(self):
+        """ Show current state of the table. """
+
         dom = domino()
-
-        print('-'*80)
-        print("\nThis is the current piece history:")
-        for ind in self.piecHist:
-            if ind is None:
-                print(str(ind))
-            else:
-                print(str(ind) + ": " + str(dom.getPiecPair(ind)))
-
         cp = self.currPiec
         if cp is not None:
-            print("\nThis is the current piece (state) in the table:")
-            print(str(cp)+ " (" + str(dom.getPiecPair(cp)) + ")")
+            self.msgr.prnt({'eng': "\n-> This is the current piece " + \
+                                   "(state) in the table:",
+                            'por': "\n-> Esta é a peça atual (estado) do jogo:"})
+            self.msgr.prnt(str(cp) + " (" + str(dom.getPiecPair(cp)) + ")")
 
-        print("\nThese are the players' hands:")
+    def showHand(self):
+        """ Show the player's hands. """
+
+        dom = domino()
+        self.msgr.prnt({'eng': "\nThese are the players' hands:",
+                   'por': "\nAqui estão as mãos dos jogadores:"})
         for pl in range(4):
             p = self.players[pl]
-            print("\n  Player #" + str(pl) + ":")
+            self.msgr.prnt({'eng': "  Player #" + str(pl) + ":",
+                       'por': "  Jogador #" + str(pl) + ":"})
             handStr = ''
             for ind in range(len(p.hand)):
-                handStr += str(dom.getPiecPair(p.hand[ind]))
-                handStr += ', '
-            print(handStr)
+                handStr += str(dom.getPiecPair(p.hand[ind]))+', '
+            self.msgr.prnt(handStr)
+
+    def showHandNumb(self):
+        self.msgr.prnt({'eng': "\n-> Number of pieces in players' hands:",
+                        'por': "\n-> Número de peças nas mãos dos jogadores:"})
+        for pl in range(4):
+            p = self.players[pl]
+            self.msgr.prnt({'eng': " Pl. " + str(pl) + ": " + \
+                                   str(len(p.hand)) + " pieces.",
+                            'por': " Jog. " + str(pl) + ": " + \
+                                   str(len(p.hand)) + " peças."})
+
+    def showTabl(self):
+
+        self.msgr.prnt('-' * 80)
+
+        self.showHist()
+        self.showStat()
+        self.showHandNumb()
+
+    def showAll(self):
+
+        self.msgr.prnt('-' * 80)
+        self.showHist()
+        self.showStat()
+        self.showHand()
 
 
-class match():
+class match:
     """Class match plays a simple match."""
 
-    def play(compSttg,starts=-1):
-        print('-'*80)
-        print("\nNew match!")
-        tab = table(starts=starts,compSttg=compSttg)
-#        self.tab = tab
-#        self.EvnPts = 0
-#        self.OddPts = 0
-
-        #tab.showAll()
+    @staticmethod
+    def play(compSttg, starts=-1, msgr=None):
+        msgr.prnt('-' * 80)
+        msgr.prnt({'eng': "\nNew match!",
+                   'por': "\nNova partida!"})
+        tab = table(starts=starts, compSttg=compSttg, msgr=msgr)
 
         # First piece!
         if starts == -1:
             tab.play(isFirst=True)
         else:
             tab.play()
-        #tab.showAll()
+        # tab.showAll()
 
         win = None
         while win is None:
             win = tab.play()
-            #tab.showAll()
-        print('\n'+'-'*80)
-        print("\n\n\nGAME FINISHED!")
-        if win % 2 == 0:
-            print("\n    EVEN team won this match!")
-            print("\nCONGRATULATIONS!!")
-        else:
-            print("\n    ODD team won this match!")
-            print("\nSorry, you lost!")
+            # tab.showAll()
+        msgr.prnt('-' * 80)
 
+        msgr.prnt({'eng': "\n\n\nGAME FINISHED!",
+                   'por': "\n\n\nJOGO CONCLUÍDO!"})
+        if win % 2 == 0:
+            msgr.prnt({'eng': "\n    EVEN team won this match!" +
+                              "\n\nCONGRATULATIONS!!",
+                       'por': "\n    Time PAR ganhou esta partida!" +
+                              "\n\nPARABÉNS!!"})
+        else:
+            msgr.prnt({'eng': "\n    ODD team won this match!" +
+                              "\n\nSorry, you lost!",
+                       'por': "\n    Time ÍMPAR ganhou esta partida!" +
+                              "\n\nSinto muito, você perdeu!"})
         return win, tab.nPtsAdd, tab.starts
 
-class champ():
+
+class champ:
     """Class champ plays a championship."""
 
-    def __init__(self,compSttg=None):
-        print('-'*80)
-        print('-'*80)
-        print("\nNew championship!\n")
-        print('-'*80)
-        print('-'*80)
+    def __init__(self, compSttg=None, msgr=None):
+        msgr.prnt('-' * 80 + '\n' + '-' * 80)
+        msgr.prnt({'eng': "\nNew championship!\n",
+                   'por': "\nNovo campeonato!\n"})
+        msgr.prnt('-' * 80 + '\n' + '-' * 80)
 
-        print("\nThere will be four players:")
-        print(" - 0 (You), ")
-        print(" - 1 (Computer opponent), ")
-        print(" - 2 (Computer ally), ")
-        print(" - 3 (Computer opponent).")
+        msg = {'eng': "\nThere will be four players:\n" + \
+                      " - 0 (You), \n - 1 (Computer opponent),\n" + \
+                      " - 2 (Computer ally),\n - 3 (Computer opponent).",
+               'por': "\nSão quatro os jogadores:\n" + \
+                      " - 0 (Você), \n - 1 (Computador oponente),\n" + \
+                      " - 2 (Computer aliado),\n - 3 (Computador oponente)."}
+        msgr.prnt(msg)
 
         if compSttg is None:
-            compSttg = ['rand','rand','rand']
+            compSttg = ['rand', 'rand', 'rand']
 
-        print("\n Strategy for the computers:")
-        print(compSttg)
+        msgr.prnt({'eng': "\n Strategy for the computers:",
+                   'por': "\n Estratégia para os computadores:"})
+        msgr.prnt(compSttg)
 
-        print("\nPress any key to continue...")
+        msgr.prnt({'eng': "\nPress any key to continue...",
+                   'por': "\nPressione qualquer tecla para continuar..."})
         input("  >> ")
-
 
         EvnPts = 0
         OddPts = 0
         starts = -1
         while EvnPts < 6 and OddPts < 6:
-            win, ptsAdd, started = match.play(starts=starts,compSttg=compSttg)
+            win, ptsAdd, started = match.play(starts=starts, compSttg=compSttg,
+                                              msgr=msgr)
 
             if win % 2 == 0:
                 EvnPts += ptsAdd
             else:
                 OddPts += ptsAdd
 
-            starts = (started+1)%4
-            print("\nEven team:",EvnPts)
-            print("Odd  team:",OddPts)
-            print('\nPress any key to continue...')
-            input(' >> ')
+            starts = (started + 1) % 4
+            msgr.prnt({'eng': "\nEven team: " + str(EvnPts),
+                       'por': "\nTime par: " + str(EvnPts)})
+
+            msgr.prnt({'eng': "\nOdd team: " + str(OddPts),
+                       'por': "\nTime ímpar: " + str(OddPts)})
+
+            msgr.prnt({'eng': "\nPress any key to continue...",
+                       'por': "\nPressione qualquer tecla para continuar..."})
+            input("  >> ")
         #
 
-        print('\n\n\n'+'*'*80)
+        msgr.prnt('\n\n\n' + '*' * 80)
         if EvnPts >= 6:
-
-            print('\n YOU HAVE WON THIS GAME!\n')
-            print('YOU ARE TOTALLY EXCELLENT!')
+            msgr.prnt({'eng': "\n YOU HAVE WON THIS GAME!\n" +
+                              "YOU ARE TOTALLY EXCELLENT!!\n",
+                       'por': "\n VOCÊ GANHOU ESSE JOGO!\n" +
+                              "VOCÊ É TOTALMENTE EXCELENTE!!\n"})
         else:
-            print('\nSorry, it seems you lost this game...\n')
-            print('Good luck on the next one!')
+            msgr.prnt({'eng': "\nSorry, it seems you lost this game...\n" +
+                              "Good luck on the next one!\n",
+                       'por': "\nDesculpe, mas parece que você perdeu" +
+                              " esse jogo...\nBoa sorte no próximo!\n"})

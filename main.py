@@ -21,5 +21,7 @@ Main file for domino project.
 #pts = match.play()
 
 from game import champ
+from play import msgr
 
-champ(compSttg=['basic','rand','basic'])
+thisMsgr = msgr(InptLang='por')
+champ(compSttg=['basic','rand','basic'],msgr=thisMsgr)
