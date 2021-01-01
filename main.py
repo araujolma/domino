@@ -8,20 +8,14 @@ Created on Tue Jan  2 13:31:29 2018
 Main file for domino project.
 """
 
-#import game
-#
-#domino = game.domino()
-#table = game.table()
-#
-#print(domino.piecList)
 
-#from game import match
+# from game import match
 
-#match()
-#pts = match.play()
+# match()
+# pts = match.play()
 
 from game import champ
 from play import msgr
 
 thisMsgr = msgr(InptLang='por')
-champ(compSttg=['basic','rand','basic'],msgr=thisMsgr)
+champ(compSttg=['basic', 'rand', 'basic'], msgr=thisMsgr)

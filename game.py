@@ -10,8 +10,11 @@ import random
 
 
 class table:
-    """Class table acts as both the table itself, holding the history of
-    played pieces, as well as the dealer, asking the players to play."""
+    """Represents the table.
+
+    Class table acts as both the table itself, holding the history of
+    played pieces, as well as the dealer, asking the players to play.
+    """
 
     def __init__(self, compSttg, starts=-1, msgr=None):
 
@@ -56,27 +59,27 @@ class table:
             startList = [27, 25, 22, 18, 13]
             thisDblIndx = 0
             keepLook = True
-            while keepLook:  # and thisDblIndx < 5:
-                #                print("\nSearching for",thisDblIndx,": piece",startList[thisDblIndx])
+            while keepLook:
+
                 plyrInd = 0
                 while keepLook and plyrInd < 4:
-                    #                    print("Searching in player "+str(plyrInd)+"'s hands.")
+
                     pHand = self.players[plyrInd].hand
-                    #                    print(pHand)
+
                     if startList[thisDblIndx] in pHand:
                         keepLook = False
-                    #                        print("Found it!")
+
                     else:
                         plyrInd += 1
                     #
                 #
                 if keepLook:
-                    msg = {'eng': "\nPiece " + str(startList[thisDblIndx]) + \
-                                  " is not in the players' hands." + \
+                    msg = {'eng': "\nPiece " + str(startList[thisDblIndx]) +
+                                  " is not in the players' hands." +
                                   "\nPress any key to continue...",
-                           'por': "\nPedra " + str(startList[thisDblIndx]) + \
-                                  " não está nas mãos dos jogadores." + \
-                                  "\nPressione qualquer tecla " + \
+                           'por': "\nPedra " + str(startList[thisDblIndx]) +
+                                  " não está nas mãos dos jogadores." +
+                                  "\nPressione qualquer tecla " +
                                   "para continuar..."}
                     self.msgr.prnt(msg)
 
@@ -87,15 +90,14 @@ class table:
             self.starts = plyrInd
             self.strtWith = startList[thisDblIndx]
         #
-        self.msgr.prnt({'eng': "\nPlayer #" + str(self.starts) + \
+        self.msgr.prnt({'eng': "\nPlayer #" + str(self.starts) +
                                " will begin.\n",
-                        'por': "\nJogador #" + str(self.starts) + \
+                        'por': "\nJogador #" + str(self.starts) +
                                " vai começar.\n"})
         self.plays = self.starts
 
     def play(self, isFirst=False):
-        """ Put the players to play! """
-
+        """Put the players to play."""
         dom = domino()
         win = None
         pl = self.players[self.plays]
@@ -141,11 +143,11 @@ class table:
             self.msgr.prnt({'eng': "\nDeadlock!",
                             'por': "\nTravou!"})
             self.showAll()
-            self.msgr.prnt({'eng': "\nEven team: " + str(ptEvn) + \
-                                   " points, Odd team: " + str(ptOdd) + \
+            self.msgr.prnt({'eng': "\nEven team: " + str(ptEvn) +
+                                   " points, Odd team: " + str(ptOdd) +
                                    " points...",
-                            'por': "\nTime par: " + str(ptEvn) + \
-                                   " pontos, Time ímpar: " + str(ptOdd) + \
+                            'por': "\nTime par: " + str(ptEvn) +
+                                   " pontos, Time ímpar: " + str(ptOdd) +
                                    " pontos..."})
             if ptEvn <= ptOdd:
                 win = 0
@@ -160,7 +162,10 @@ class table:
         return win
 
     def updtCurrPiec(self, move):
-        """Update current piece. """
+        """Update current piece.
+
+        Updates the table's .currPiec attribute and returns None.
+        """
         dom = domino()
         piec, posi, ornt = move
 
@@ -190,22 +195,29 @@ class table:
         #
 
     def specFnshTest(self, move):
-        """ Check for special finishings."""
+        """Check for special finishings.
 
+        Special finishings are:
+            - "carroça": for finishing with a double piece such as [3,3];
+                         (this yields 2 points)
+            - "lailot": for finishing at both ends simultaneously;
+                         (this yields 3 points)
+            - "cruzado": for finishing with a double piece at both ends;
+                         (this yields 4 points)
+
+        """
         self.msgr.prnt({'eng': "\nDONE!", 'por': "\nBATI!"})
         dom = domino()
 
         piec, _, _ = move
         piecPair = dom.getPiecPair(piec)
 
-        # print("Final piece:",piecPair)
         # Test for final double piece
         if piecPair[0] == piecPair[1]:
             isCarr = True
         else:
             isCarr = False
 
-        # print("Table state before last piece:",dom.getPiecPair(self.currPiec))
         # Test for finish at both ends
         compScor = dom.isComp(piec, self.currPiec)
         # print(compScor)
@@ -223,11 +235,6 @@ class table:
             compScor -= 4
         if compScor > 0:
             isEig = True
-
-        # print("isOne:",isOne)
-        # print("isTwo:",isTwo)
-        # print("isFour:",isFour)
-        # print("isEig:",isEig)
 
         if (isTwo and isFour) or (isEig and isOne):
             bothSide = True
@@ -254,7 +261,7 @@ class table:
         self.nPtsAdd = nPtsAdd
 
     def showHist(self):
-        """ Show history of the played pieces. """
+        """Show history of the played pieces."""
         dom = domino()
 
         # Show history
@@ -282,51 +289,50 @@ class table:
         #
 
     def showStat(self):
-        """ Show current state of the table. """
-
+        """Show current state of the table."""
         dom = domino()
         cp = self.currPiec
         if cp is not None:
-            self.msgr.prnt({'eng': "\n-> This is the current piece " + \
+            self.msgr.prnt({'eng': "\n-> This is the current piece " +
                                    "(state) in the table:",
-                            'por': "\n-> Esta é a peça atual (estado) do jogo:"})
+                            'por': "\n-> Esta é a peça atual (estado) " +
+                                   "do jogo:"})
             self.msgr.prnt(str(cp) + " (" + str(dom.getPiecPair(cp)) + ")")
 
     def showHand(self):
-        """ Show the player's hands. """
-
+        """Show the player's hands."""
         dom = domino()
         self.msgr.prnt({'eng': "\nThese are the players' hands:",
-                   'por': "\nAqui estão as mãos dos jogadores:"})
+                        'por': "\nAqui estão as mãos dos jogadores:"})
         for pl in range(4):
             p = self.players[pl]
             self.msgr.prnt({'eng': "  Player #" + str(pl) + ":",
-                       'por': "  Jogador #" + str(pl) + ":"})
+                            'por': "  Jogador #" + str(pl) + ":"})
             handStr = ''
             for ind in range(len(p.hand)):
                 handStr += str(dom.getPiecPair(p.hand[ind]))+', '
             self.msgr.prnt(handStr)
 
     def showHandNumb(self):
+        """Show the number of pieces on each player's hands."""
         self.msgr.prnt({'eng': "\n-> Number of pieces in players' hands:",
                         'por': "\n-> Número de peças nas mãos dos jogadores:"})
         for pl in range(4):
             p = self.players[pl]
-            self.msgr.prnt({'eng': " Pl. " + str(pl) + ": " + \
+            self.msgr.prnt({'eng': " Pl. " + str(pl) + ": " +
                                    str(len(p.hand)) + " pieces.",
-                            'por': " Jog. " + str(pl) + ": " + \
+                            'por': " Jog. " + str(pl) + ": " +
                                    str(len(p.hand)) + " peças."})
 
     def showTabl(self):
-
+        """Show the table: history, status and hand numbers."""
         self.msgr.prnt('-' * 80)
-
         self.showHist()
         self.showStat()
         self.showHandNumb()
 
     def showAll(self):
-
+        """Show everything: history, status and the players' hands."""
         self.msgr.prnt('-' * 80)
         self.showHist()
         self.showStat()
@@ -338,6 +344,7 @@ class match:
 
     @staticmethod
     def play(compSttg, starts=-1, msgr=None):
+        """Play a match."""
         msgr.prnt('-' * 80)
         msgr.prnt({'eng': "\nNew match!",
                    'por': "\nNova partida!"})
