@@ -7,6 +7,7 @@ Created on Tue Jan  2 13:58:05 2018
 """
 from play import player, domino
 import random
+import numpy
 
 
 class table:
@@ -24,6 +25,7 @@ class table:
         self.piecHist = []
         self.currPiec = None
         self.msgr = msgr
+        self.hasNot = numpy.zeros((4, 7), dtype=bool)
 
         # Declare players, set their hands
         self.players = []
@@ -111,7 +113,12 @@ class table:
         piec, posi, ornt = move
         self.piecHist.append(piec)
 
-        if piec is not None:
+        if piec is None:
+            # no piece was played. Update the 'hasNot' arrays:
+            thisPiecPair = dom.getPiecPair(self.currPiec)
+            self.hasNot[self.plays, thisPiecPair[0]] = True
+            self.hasNot[self.plays, thisPiecPair[1]] = True
+        else:
             # Player has played a proper piece
 
             if len(pl.hand) == 0:
@@ -192,7 +199,6 @@ class table:
                 currPiecPair[1] = piecPair[ppIndx]
 
             self.currPiec = dom.getPiecNum(currPiecPair)
-        #
 
     def specFnshTest(self, move):
         """Check for special finishings.
@@ -308,7 +314,7 @@ class table:
             p = self.players[pl]
             self.msgr.prnt({'eng': "  Player #" + str(pl) + ":",
                             'por': "  Jogador #" + str(pl) + ":"})
-            handStr = ''
+            handStr = '    '
             for ind in range(len(p.hand)):
                 handStr += str(dom.getPiecPair(p.hand[ind]))+', '
             self.msgr.prnt(handStr)
@@ -324,11 +330,44 @@ class table:
                             'por': " Jog. " + str(pl) + ": " +
                                    str(len(p.hand)) + " peças."})
 
+    def showHasNot(self):
+        """Show what each player has declared not to have."""
+        # language-specific texts:
+        if self.msgr.lang == 'eng':
+            hasNot_txt = 'has declared not having'
+            pl_txt = 'Pl'
+            titl_txt = "\n-> Player's declarations:\n"
+        elif self.msgr.lang == 'por':
+            hasNot_txt = 'declarou não ter'
+            pl_txt = 'Jog'
+            titl_txt = "\n-> Declarações dos jogadores:\n"
+
+        # this is the body of the message
+        msg = ''
+        for i in range(4):
+            thisPlyrStr = ' {}. {} {}: '.format(pl_txt, i, hasNot_txt)
+            # check which pieces this player has not.
+            lacks = False  # In principle, he/she has everything
+            for j in range(7):
+                if self.hasNot[i, j]:
+                    lacks = True
+                    thisPlyrStr += '{}, '.format(j)
+            # only print something if this player lacks something
+            if lacks:
+                # this [:-2] gets rid of the trailing ", "
+                msg += thisPlyrStr[:-2] + ';\n'
+
+        # only print if someone has declared something
+        if len(msg) > 0:
+            # this [:-1] gets rid of the extra '\n' in the end
+            self.msgr.prnt(titl_txt + msg[:-1])
+
     def showTabl(self):
         """Show the table: history, status and hand numbers."""
         self.msgr.prnt('-' * 80)
         self.showHist()
         self.showStat()
+        self.showHasNot()
         self.showHandNumb()
 
     def showAll(self):
@@ -348,6 +387,7 @@ class match:
         msgr.prnt('-' * 80)
         msgr.prnt({'eng': "\nNew match!",
                    'por': "\nNova partida!"})
+        # create a new table
         tab = table(starts=starts, compSttg=compSttg, msgr=msgr)
 
         # First piece!
@@ -355,11 +395,13 @@ class match:
             tab.play(isFirst=True)
         else:
             tab.play()
+        # DEBUG:
         # tab.showAll()
 
         win = None
         while win is None:
             win = tab.play()
+            # DEBUG:
             # tab.showAll()
         msgr.prnt('-' * 80)
 
@@ -387,11 +429,11 @@ class champ:
                    'por': "\nNovo campeonato!\n"})
         msgr.prnt('-' * 80 + '\n' + '-' * 80)
 
-        msg = {'eng': "\nThere will be four players:\n" + \
-                      " - 0 (You), \n - 1 (Computer opponent),\n" + \
+        msg = {'eng': "\nThere will be four players:\n" +
+                      " - 0 (You), \n - 1 (Computer opponent),\n" +
                       " - 2 (Computer ally),\n - 3 (Computer opponent).",
-               'por': "\nSão quatro os jogadores:\n" + \
-                      " - 0 (Você), \n - 1 (Computador oponente),\n" + \
+               'por': "\nSão quatro os jogadores:\n" +
+                      " - 0 (Você), \n - 1 (Computador oponente),\n" +
                       " - 2 (Computer aliado),\n - 3 (Computador oponente)."}
         msgr.prnt(msg)
 

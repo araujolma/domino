@@ -122,6 +122,24 @@ class domino:
 
         return num
 
+    @staticmethod
+    def pcsWith(num):
+        """Get all possible pieces with a given number.
+
+        For example:
+            - pieces #0 through #6 are the ones that have a 0 in it.
+            - pieces #6, #12, #17, #21, #24, #26 and #27 are the ones that
+              have a 6 in it.
+
+        returns: a list of the 7 pieces that have the given number 'num'.
+        """
+        ret = [0]*7
+
+        for i in range(7):
+            ret[i] = domino.getPiecNum([num, i])
+
+        return ret
+
 
 class player:
     """Represents the player."""
